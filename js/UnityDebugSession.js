@@ -145,11 +145,13 @@ class UnityDebugSession extends DebugSession_1.DebugSession {
 		//Recv:{"seq":152,"type":"event","event":"stopped","body":{"threadId":1,"reason":"breakpoint","text":null,"allThreadsStopped":true}}
 	}
 	stackTraceRequest(response, args) {
-			response.body = {
-					stackFrames: this.breakNotify.stackFrames,
-					totalFrames: this.breakNotify.stackFrames.length
-				};
+		this.printConsole(`================== stackTraceRequest,args:${JSON.stringify(args)}`)
+		response.body = {
+			stackFrames: this.breakNotify.stackFrames,
+			totalFrames: this.breakNotify.stackFrames.length
+		};
 		this.printConsole(`[stackTraceRequest] :args.source: ${JSON.stringify(args)}`)
+		this.sendResponse(response);
 	}
 	scopesRequest(response, args) {
 		this.printConsole(`[scopesRequest] :args.source: ${JSON.stringify(args)}`)
@@ -166,28 +168,27 @@ class UnityDebugSession extends DebugSession_1.DebugSession {
 	setBreakPointsRequest(response, args) {
 		this.printConsole(`setBreakPointsRequest,args:${JSON.stringify(args)}`)
 
-		//const source = args.source;
-		//const bpsProto = [];
-		//if (source && source.path) {
-		//const path = path_1.normalize(source.path);
-		//const bps = args.breakpoints || [];
-		//const bpsResp = [];
-		//for (let i = 0; i < bps.length; i++) {
-		//const bp = bps[i];
-		//bpsProto.push({
-		//file: path,
-		//line: bp.line
-		//});
-		//const bpResp = new vscode_debugadapter_1.Breakpoint(true, bp.line);
-		//bpResp.id = this.breakPointId++;
-		//bpsResp.push(bpResp);
-		//}
-		//response.body = { breakpoints: bpsResp };
-		//this.breakpoints = this.breakpoints.filter(v => v.file !== path);
-		//this.breakpoints = this.breakpoints.concat(bpsProto);
-		//}
-
-		args.sourceModified = false
+		const source = args.source;
+		const bpsProto = [];
+		if (source && source.path) {
+			const path = path_1.normalize(source.path);
+			const bps = args.breakpoints || [];
+			const bpsResp = [];
+			for (let i = 0; i < bps.length; i++) {
+				const bp = bps[i];
+				bpsProto.push({
+					file: path,
+					line: bp.line
+				});
+				const bpResp = new vscode_debugadapter_1.Breakpoint(true, bp.line);
+				bpResp.id = this.breakPointId++;
+				bpsResp.push(bpResp);
+			}
+			response.body = { breakpoints: bpsResp };
+			this.breakpoints = this.breakpoints.filter(v => v.file !== path);
+			this.breakpoints = this.breakpoints.concat(bpsProto);
+		}
+		args.sourceModified = true
 		this.unityClient.sendRequest("setBreakpoints", args)
 		this.sendResponse(response);
 	}

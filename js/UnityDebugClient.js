@@ -94,7 +94,7 @@ class UnityDebugClient {
 					//this.context.printConsole(`AAA message:${message},this._rawData.length :${this._rawData.length }`);
 					if (message.length > 0) {
 						try {
-							this.context.printConsole(`Recv:${message}`);
+							//this.context.printConsole(`Recv:${message}`);
 							let msg = JSON.parse(message);
 							if (msg.type === 'request' || msg.type == 'event') {
 								this.dispatchRequest(msg);
