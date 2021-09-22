@@ -1,0 +1,14 @@
+{
+  "name": "unitydebugadapter",
+  "version": "1.0.0",
+  "description": "debug unity",
+  "main": "UnityDebugAdapter.js",
+  "scripts": {
+    "test": "node UnityDebugAdapter"
+  },
+  "author": "junfff",
+  "license": "MIT",
+  "dependencies": {
+    "vscode-debugadapter": "^1.49.0"
+  }
+}
