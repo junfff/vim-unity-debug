@@ -39,7 +39,6 @@ exports.__esModule = true;
 var child_process_1 = require("child_process");
 var child_process_2 = require("child_process");
 var UnityDebugSession = require("./UnityDebugSession");
-const EmmyDebugSession_1 = require("./EmmyDebugSession");
 function run_debug(config, childProcess2) {
 	var session = new UnityDebugSession.UnityDebugSession(false);
 	process.on('SIGTERM', function () {
