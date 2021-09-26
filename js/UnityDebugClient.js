@@ -65,7 +65,6 @@ class UnityDebugClient {
 	}
 	// ---- protected ----------------------------------------------------------
 	dispatchRequest(request) {
-		//this.context.printConsole(`dispatchRequest:${JSON.stringify(request)}`);
 		if (this.context) {
 			this.context.dispatchMsg(request);
 		}
@@ -76,7 +75,7 @@ class UnityDebugClient {
 		message.seq = this._sequence++;
 		if (this._writableStream) {
 			const json = JSON.stringify(message);
-			this.context.printConsole(`Send:${json}`)
+			//this.context.printConsole(`[Send]:${json}`)
 			this._writableStream.write(`Content-Length: ${Buffer.byteLength(json, 'utf8')}\r\n\r\n${json}`, 'utf8');
 		}
 	}
@@ -85,16 +84,13 @@ class UnityDebugClient {
 		this._rawData = Buffer.concat([this._rawData, buffer2]);
 		while (true) {
 			if (this._contentLength >= 0) {
-				//this.context.printConsole(`AAA this._contentLength:${this._contentLength},this._rawData.length :${this._rawData.length }`);
-
 				if (this._rawData.length >= this._contentLength) {
 					const message = this._rawData.toString('utf8', 0, this._contentLength);
 					this._rawData = this._rawData.slice(this._contentLength);
 					this._contentLength = -1;
-					//this.context.printConsole(`AAA message:${message},this._rawData.length :${this._rawData.length }`);
 					if (message.length > 0) {
 						try {
-							//this.context.printConsole(`Recv:${message}`);
+							//this.context.printConsole(`[Recv]:${message}`);
 							let msg = JSON.parse(message);
 							if (msg.type === 'request' || msg.type == 'event') {
 								this.dispatchRequest(msg);
@@ -107,10 +103,8 @@ class UnityDebugClient {
 									clb(response);
 								}
 							}
-							else if (msg.success) {
-								if (msg.command) {
-									this.context.dispatchCommand(msg);
-								}
+							if (msg.command) {
+								this.context.dispatchCommand(msg);
 							}
 						}
 						catch (e) {
@@ -125,17 +119,13 @@ class UnityDebugClient {
 			}
 			else {
 				const idx = this._rawData.indexOf(UnityDebugClient.TWO_CRLF);
-				//this.context.printConsole(`idx:${idx},_rawData:${this._rawData}`);
 				if (idx !== -1) {
 					const header = this._rawData.toString('utf8', 0, idx);
 					const lines = header.split('\r\n');
 					for (let i = 0; i < lines.length; i++) {
 						const pair = lines[i].split(/: +/);
-						//this.context.printConsole(`idx:${idx},.pair.length:${pair.length},pair[0]:${pair[0]},lines:${lines}`);
 						if (pair[0] == 'Content-Length') {
 							this._contentLength = +pair[1];
-
-							//this.context.printConsole(`idx:${idx},this._contentLength:${this._contentLength}`);
 						}
 					}
 					this._rawData = this._rawData.slice(idx + UnityDebugClient.TWO_CRLF.length);

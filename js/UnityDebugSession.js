@@ -12,6 +12,7 @@ const net = require("net");
 const readline = require("readline");
 const DebugSession_1 = require("./DebugSession");
 const UnityDebugClient_1 = require("./UnityDebugClient");
+const StackTraceHandler_1 = require("./StackTraceHandler");
 const vscode_debugadapter_1 = require("vscode-debugadapter");
 const fs_1 = require("fs");
 const path_1 = require("path");
@@ -19,8 +20,11 @@ class UnityDebugSession extends DebugSession_1.DebugSession {
 	constructor() {
 		super(...arguments);
 		this.unityClient = new UnityDebugClient_1.UnityDebugClient();
+		this.stackTraceHandler = new StackTraceHandler_1.StackTraceHandler();
 		this.breakpoints = [];
 		this.unityClient.context = this;
+		this.stackTraceHandler.context = this;
+		this.handles = new vscode_debugadapter_1.Handles();
 	}
 	initializeRequest(response, args) {
 		if (this.childProcess) {
@@ -32,7 +36,6 @@ class UnityDebugSession extends DebugSession_1.DebugSession {
 			this.unityClient.start(this.childProcess.stdout, this.childProcess.stdin);
 
 		}
-		//this.readClient()
 		this.printConsole(`initializeRequest:config:${JSON.stringify(this.config)}`)
 		this.printConsole(`initializeRequest:args:${JSON.stringify(args)}`)
 
@@ -55,24 +58,11 @@ class UnityDebugSession extends DebugSession_1.DebugSession {
 		response.body = {};
 		this.sendResponse(response);
 	}
-	readClient() {
-		readline.createInterface({
-			input: this.childProcess.stdout,
-			output: this.childProcess.stdin
-		})
-			.on("line", line => this.onReceiveLine(line));
-		//process.on('close', hadErr => this.onSocketClose())
-		//.on('error', err => this.onSocketClose());
-	}
 	launchRequest(response, args) {
 		this.rootpath = args.cwd;
 		this.printConsole(`launchRequest,this.rootpath:${this.rootpath}`)
-		//this.readClient();
 	}
 	attachRequest(response, args) {
-		this.sendEvent(new vscode_debugadapter_1.Event('showWaitConnection'));
-
-
 		this.rootpath = args.cwd;
 		this.printConsole(`attachRequest,this.rootpath:${this.rootpath},args:${JSON.stringify(args)}`)
 		args.name = this.config["name"];
@@ -93,15 +83,10 @@ class UnityDebugSession extends DebugSession_1.DebugSession {
 
 	onReceiveLine(line) {
 		this.printConsole(`Recv:${line}`)
-		if (line != null) {
-			//this.processData(line);
-		}
 	}
 	dispatchUnkonw(msg) {
-		//this.printConsole(`dispatchUnkonw:${JSON.stringify(msg)}`)
 	}
 	dispatchEvent(e) {
-		//this.printConsole(`do stopped::AAA`)
 		if (e && e.event == 'output') {
 			this.printConsole(`${e.body.output}`)
 		}
@@ -111,63 +96,111 @@ class UnityDebugSession extends DebugSession_1.DebugSession {
 	}
 	dispatchCommand(msg) {
 		switch (msg.command) {
-			case 'stackTrace':
-				//TODO CMD:{"success":true,"message":null,"request_seq":4,"command":"stackTrace","body":{"stackFrames":[{"id":1000,"source":{"name":"AvatarManager.cs","path":"/home/ljf/workspace/wonder_party_new/avatarProject/Assets/Script/AvatarManager.cs","sourceReference":0,"presentationHint":"normal"},"line":424,"column":0,"name":"AvatarManager.Update","presentationHint":"normal"}],"totalFrames":1},"seq":191,"type":"response"}
+			//-- variables  -- initialize  -- evaluate  - continue   -- next
+			case 'continue':
+				return;
+			case 'next':
+				return;
+			case 'evaluate':
+				return;
+			case 'initialize':
+				return;
+			case 'variables':
+				return;
+			case 'scopes':
+				return;
+			case 'launch':
+				return;
+			case 'stackTrace':  // BreakNotify
 				this.breakNotify = msg.body;
 				this.sendEvent(new vscode_debugadapter_1.StoppedEvent("breakpoint", 1));
 				return;
-			case 'setBreakpointsB':
-				//TODO CMD:{"success":true,"message":null,"request_seq":6,"command":"setBreakpoints","body":{"breakpoints":[]},"seq":193,"type":"response"}
-				//this.breakNotify = msg.body;
-				//this.sendEvent(new vscode_debugadapter_1.StoppedEvent("breakpoint", 1));
+			case 'setBreakpoints':
+				this.breakNotify = msg.body;
+				this.sendEvent(new vscode_debugadapter_1.StoppedEvent("breakpoint", 1));
 				return;
 		}
-		this.printConsole(`TODO CMD:${JSON.stringify(msg)}`)
+		this.printConsole(`TODO dispatchCommand:${JSON.stringify(msg)}`)
 	}
 	dispatchMsg(msg) {
-		//console.log(`${msg}`);
 		switch (msg.event) {
 			case 'stopped':
-				//this.printConsole(`stopped => msg:${JSON.stringify(msg)}`);
 				this.unityClient.sendRequest('stackTrace', msg.body);
 				return;
 			case 'output':
-				//this.printConsole(`${msg.body.output}`)
 				return;
 			case 'initialized':
-				//TODO:{"seq":6,"type":"event","event":"initialized","body":null}
 				return;
 			case 'thread':
-				//TODO:{"seq":188,"type":"event","event":"thread","body":{"reason":"exited","threadId":8}}
 				return;
 		}
 		this.printConsole(`TODO MSG:${JSON.stringify(msg)}`)
-		//Recv:{"seq":152,"type":"event","event":"stopped","body":{"threadId":1,"reason":"breakpoint","text":null,"allThreadsStopped":true}}
 	}
 	stackTraceRequest(response, args) {
-		this.printConsole(`================== stackTraceRequest,args:${JSON.stringify(args)}`)
-		response.body = {
-			stackFrames: this.breakNotify.stackFrames,
-			totalFrames: this.breakNotify.stackFrames.length
-		};
-		this.printConsole(`[stackTraceRequest] :args.source: ${JSON.stringify(args)}`)
-		this.sendResponse(response);
+		return __awaiter(this, void 0, void 0, function*() {
+			if (this.breakNotify) {
+				var stackFrames = yield this.stackTraceHandler.run(this.breakNotify);
+				response.body = {
+					stackFrames: stackFrames,
+					totalFrames: stackFrames.length
+				};
+			}
+			this.sendResponse(response);
+		});
 	}
 	scopesRequest(response, args) {
-		this.printConsole(`[scopesRequest] :args.source: ${JSON.stringify(args)}`)
+		//this.printConsole(`[scopesRequest] :args.source: ${JSON.stringify(args)}`)
+		this.currentFrameId = args.frameId;
+		if (this.breakNotify) {
+			const stackData = this.breakNotify.stackFrames[args.frameId];
+			this.stackLevel = stackData.id;
+			response.body = {
+				scopes: [
+					{
+						name: "Variables",
+						variablesReference: this.handles.create(stackData),
+						expensive: false
+					}
+				]
+			};
+		}
 		this.sendResponse(response);
 	}
 	variablesRequest(response, args) {
-		this.printConsole(`[variablesRequest] :args.source: ${JSON.stringify(args)}`)
-		this.sendResponse(response);
+		return __awaiter(this, void 0, void 0, function*() {
+			if (this.breakNotify) {
+				const stackData = this.handles.get(args.variablesReference);
+				const children = yield this.stackTraceHandler.computeChildren(stackData, args.variablesReference);
+				response.body = {
+					variables: children
+				};
+			}
+			this.sendResponse(response);
+		});
 	}
 	evaluateRequest(response, args) {
-		this.printConsole(`[evaluateRequest] :args.source: ${JSON.stringify(args)}`)
-		this.sendResponse(response);
+		return __awaiter(this, void 0, void 0, function*() {
+			const evalResp = yield this.stackTraceHandler.eval(args.expression, this.stackLevel)
+			if (evalResp.success) {
+				const variable = evalResp.body;
+				response.body = {
+					result: variable.result,
+					type: variable.type,
+					variablesReference: variable.variablesReference
+				};
+			}
+			else {
+				response.body = {
+					result: evalResp.body.value,
+					type: 'string',
+					variablesReference: 0
+				};
+			}
+			this.sendResponse(response);
+		});
 	}
 	setBreakPointsRequest(response, args) {
-		this.printConsole(`setBreakPointsRequest,args:${JSON.stringify(args)}`)
-
+		//this.printConsole(`setBreakPointsRequest,args:${JSON.stringify(args)}`)
 		const source = args.source;
 		const bpsProto = [];
 		if (source && source.path) {
@@ -202,23 +235,28 @@ class UnityDebugSession extends DebugSession_1.DebugSession {
 	}
 
 	pauseRequest(response, args) {
-		this.printConsole(`[pauseRequest] :args.source: ${JSON.stringify(args)}`)
+		//this.printConsole(`[pauseRequest] :args.source: ${JSON.stringify(args)}`)
+		this.unityClient.sendRequest('pause',args)
 		this.sendResponse(response);
 	}
 	continueRequest(response, args) {
-		this.printConsole(`[continueRequest] :args.source: ${JSON.stringify(args)}`)
+		//this.printConsole(`[continueRequest] :args.source: ${JSON.stringify(args)}`)
+		this.unityClient.sendRequest('continue',args)
 		this.sendResponse(response);
 	}
 	nextRequest(response, args) {
-		this.printConsole(`[nextRequest] :args.source: ${JSON.stringify(args)}`)
+		//this.printConsole(`[nextRequest] :args.source: ${JSON.stringify(args)}`)
+		this.unityClient.sendRequest('next',args)
 		this.sendResponse(response);
 	}
 	stepInRequest(response, args) {
-		this.printConsole(`[stepInRequest] :args.source: ${JSON.stringify(args)}`)
+		//this.printConsole(`[stepInRequest] :args.source: ${JSON.stringify(args)}`)
+		this.unityClient.sendRequest('stepIn',args)
 		this.sendResponse(response);
 	}
 	stepOutRequest(response, args) {
-		this.printConsole(`[stepOutRequest] :args.source: ${JSON.stringify(args)}`)
+		//this.printConsole(`[stepOutRequest] :args.source: ${JSON.stringify(args)}`)
+		this.unityClient.sendRequest('stepOut',args)
 		this.sendResponse(response);
 	}
 }
