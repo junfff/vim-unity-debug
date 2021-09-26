@@ -96,7 +96,9 @@ class UnityDebugSession extends DebugSession_1.DebugSession {
 	}
 	dispatchCommand(msg) {
 		switch (msg.command) {
-			//-- variables  -- initialize  -- evaluate  - continue   -- next
+			//-- variables  -- initialize  -- evaluate  - continue   -- next  -- stepIn
+			case 'stepIn':
+				return;
 			case 'continue':
 				return;
 			case 'next':
