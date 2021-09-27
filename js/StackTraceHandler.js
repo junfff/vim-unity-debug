@@ -104,15 +104,25 @@ class StackTraceHandler {
 								}
 							}
 						}
+						//let jsonStack = JSON.stringify(stack);
+						//this.context.printConsole(`AAA stack:${JSON.stringify(stack)}`)
 						stack.upvalueVariables = [];
-						let path = stack.source.path;
-						if (!path) {
-							continue;
+						try {
+							if (stack.source == null || typeof (stack.source) == "undefined" || typeof (stack.source) == undefined) {
+								continue;
+							}
+							let path = stack.source.path;
+							if (!path) {
+								continue;
+							}
+							let source = new vscode_debugadapter_1.Source(stack.source.name, path);
+							stackFrames.push(new vscode_debugadapter_1.StackFrame(i, stack.name, source, stack.line));
+						} catch (e) {
+							this.context.printConsole(`AAA catch e:${JSON.stringify(e)},stack:${JSON.stringify(stack)}`)
 						}
-						let source = new vscode_debugadapter_1.Source(stack.source.name, path);
-						stackFrames.push(new vscode_debugadapter_1.StackFrame(i, stack.name, source, stack.line));
 					}
 				}
+				//this.context.printConsole(`BBB stack:${JSON.stringify(stackFrames)}`)
 				return stackFrames
 			}
 		});

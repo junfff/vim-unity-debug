@@ -154,17 +154,20 @@ class UnityDebugSession extends DebugSession_1.DebugSession {
 		//this.printConsole(`[scopesRequest] :args.source: ${JSON.stringify(args)}`)
 		this.currentFrameId = args.frameId;
 		if (this.breakNotify) {
-			const stackData = this.breakNotify.stackFrames[args.frameId];
-			this.stackLevel = stackData.id;
-			response.body = {
-				scopes: [
-					{
-						name: "Variables",
-						variablesReference: this.handles.create(stackData),
-						expensive: false
-					}
-				]
-			};
+			if (this.breakNotify.stackFrames && this.breakNotify.stackFrames.length > args.frameId) {
+				//this.printConsole(`[scopesRequest] :this.breakNotify.stackFrames: ${JSON.stringify(this.breakNotify.stackFrames)}`)
+				const stackData = this.breakNotify.stackFrames[args.frameId];
+				this.stackLevel = stackData.id;
+				response.body = {
+					scopes: [
+						{
+							name: "Variables",
+							variablesReference: this.handles.create(stackData),
+							expensive: false
+						}
+					]
+				};
+			}
 		}
 		this.sendResponse(response);
 	}
@@ -238,27 +241,27 @@ class UnityDebugSession extends DebugSession_1.DebugSession {
 
 	pauseRequest(response, args) {
 		//this.printConsole(`[pauseRequest] :args.source: ${JSON.stringify(args)}`)
-		this.unityClient.sendRequest('pause',args)
+		this.unityClient.sendRequest('pause', args)
 		this.sendResponse(response);
 	}
 	continueRequest(response, args) {
 		//this.printConsole(`[continueRequest] :args.source: ${JSON.stringify(args)}`)
-		this.unityClient.sendRequest('continue',args)
+		this.unityClient.sendRequest('continue', args)
 		this.sendResponse(response);
 	}
 	nextRequest(response, args) {
 		//this.printConsole(`[nextRequest] :args.source: ${JSON.stringify(args)}`)
-		this.unityClient.sendRequest('next',args)
+		this.unityClient.sendRequest('next', args)
 		this.sendResponse(response);
 	}
 	stepInRequest(response, args) {
 		//this.printConsole(`[stepInRequest] :args.source: ${JSON.stringify(args)}`)
-		this.unityClient.sendRequest('stepIn',args)
+		this.unityClient.sendRequest('stepIn', args)
 		this.sendResponse(response);
 	}
 	stepOutRequest(response, args) {
 		//this.printConsole(`[stepOutRequest] :args.source: ${JSON.stringify(args)}`)
-		this.unityClient.sendRequest('stepOut',args)
+		this.unityClient.sendRequest('stepOut', args)
 		this.sendResponse(response);
 	}
 }
