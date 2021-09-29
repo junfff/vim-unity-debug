@@ -130,6 +130,7 @@ class UnityDebugSession extends DebugSession_1.DebugSession {
 				this.unityClient.sendRequest('stackTrace', msg.body);
 				return;
 			case 'output':
+				this.printConsole(`${msg.body.output}`,false);
 				return;
 			case 'initialized':
 				return;
