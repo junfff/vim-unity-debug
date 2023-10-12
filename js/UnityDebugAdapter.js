@@ -59,7 +59,7 @@ function start_unity_debug() {
     var execCommand = "";
     if (process.platform !== 'win32')
         execCommand = "mono ";
-    var extensionPath = "~/.vscode-oss/extensions/unity.unity-debug-3.0.2";
+    var extensionPath = "~/.vscode-insiders/extensions/unity.unity-debug-3.0.2";
     (0, child_process_1.exec)(execCommand + extensionPath + "/bin/UnityDebug.exe list", function (error, stdout, stderr) {
         return __awaiter(this, void 0, void 0, function () {
             var processes, lines, i, chosen, config, childProcess2, response;
