@@ -79,7 +79,7 @@ class UnityDebugSession extends DebugSession_1.DebugSession {
 			//this.childProcess.signalCode(-9);
 			this.childProcess.kill();
 		}
-		//this.sendDebugAction(response, proto.DebugAction.Stop);
+		this.sendDebugAction(response, proto.DebugAction.Stop);// error
 	}
 
 	onReceiveLine(line) {
