@@ -76,9 +76,10 @@ class UnityDebugSession extends DebugSession_1.DebugSession {
 	disconnectRequest(response, args) {
 		this.printConsole(`disconnectRequest,this.rootpath:${JSON.stringify(args)}`)
 		if (this.childProcess) {
-			this.childProcess.signalCode(-9);
+			//this.childProcess.signalCode(-9);
+			this.childProcess.kill();
 		}
-		this.sendDebugAction(response, proto.DebugAction.Stop);
+		//this.sendDebugAction(response, proto.DebugAction.Stop);
 	}
 
 	onReceiveLine(line) {
